@@ -54,4 +54,10 @@ public class SquashAndStretch : MonoBehaviour
     {
         _selfDisabled = true;
     }
+
+    //this should be placed in a different script
+    public void Flip()
+    {
+        transform.Rotate(Vector3.up, 180f);
+    }
 }

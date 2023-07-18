@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
 
-public class PlayerController : MonoBehaviour
+public class CustomCharacterController : MonoBehaviour
 {
 
     [Header("Select Variable Parameter")] 
@@ -15,7 +15,8 @@ public class PlayerController : MonoBehaviour
     [Range(0, 10)]
     [SerializeField] private float gravityScale = 1f;
     [Range(0f, 20f)]
-    [SerializeField] private float jumpHeight = 10f;
+    [SerializeField]
+    protected float jumpHeight = 10f;
     [Range(0.1f, 10f)]
     [SerializeField] private float timeToReachJumpPeak = 1f;
     
@@ -31,13 +32,16 @@ public class PlayerController : MonoBehaviour
     public UnityEvent<float> omJumpApexReached;
     public UnityEvent<int> onJumpInitiated;
     public UnityEvent<int> onLanded;
+    public UnityEvent onFlip;
 
-    private Rigidbody2D _rb;
+    protected Rigidbody2D Rb;
     private Vector2 _localGravity;
     private Vector2 _localAltFallGravity;
-    private float _localGravityY;
-    private bool _grounded;
-    private float _jumpVelocity;
+    protected float LocalGravityY;
+    protected bool Grounded;
+    protected float JumpVelocity;
+
+    public bool IsGrounded => Grounded;
 
     private const float BaseGravity = 9.8f;
 
@@ -57,15 +61,15 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        _grounded = true;
-        _rb = GetComponent<Rigidbody2D>();
-        _rb.gravityScale = 0f;
-        _localGravityY = gravityScale * BaseGravity;
+        Grounded = true;
+        Rb = GetComponent<Rigidbody2D>();
+        Rb.gravityScale = 0f;
+        LocalGravityY = gravityScale * BaseGravity;
 
         //this function can alter : jumpHeight, timeToReachJumpPeak and _localGravityY
         JumpParameterCalculation();
         
-        _localGravity = new Vector2(0f, -_localGravityY);
+        _localGravity = new Vector2(0f, -LocalGravityY);
         _localAltFallGravity = new Vector2(0f, -altFallGravityScale * BaseGravity);
 
     }
@@ -76,17 +80,17 @@ public class PlayerController : MonoBehaviour
         {
             case ProjectEnums.JumpParameters.Height:
             {
-                jumpHeight = (_localGravityY * Mathf.Pow(timeToReachJumpPeak, 2f)) / 2f;
+                jumpHeight = (LocalGravityY * Mathf.Pow(timeToReachJumpPeak, 2f)) / 2f;
             }
                 break;
             case ProjectEnums.JumpParameters.Gravity:
             {
-                _localGravityY = 2 * jumpHeight / Mathf.Pow(timeToReachJumpPeak, 2f);
+                LocalGravityY = 2 * jumpHeight / Mathf.Pow(timeToReachJumpPeak, 2f);
             }
                 break;
             case ProjectEnums.JumpParameters.Time:
             {
-                timeToReachJumpPeak = Mathf.Sqrt((2 * jumpHeight)/_localGravityY);
+                timeToReachJumpPeak = Mathf.Sqrt((2 * jumpHeight)/LocalGravityY);
                 break;
             }
             default:
@@ -98,54 +102,53 @@ public class PlayerController : MonoBehaviour
     {
         if (altFallGravity)
         {
-            if (_rb.velocity.y < 0.01f)
+            if (Rb.velocity.y < 0.01f)
             {
                 //Apply Alt Gravity
-                _rb.AddForce(_localAltFallGravity, ForceMode2D.Force);
+                Rb.AddForce(_localAltFallGravity, ForceMode2D.Force);
                 return;
             }   
         }
         
         //ApplyGravity
-        _rb.AddForce(_localGravity, ForceMode2D.Force);
+        Rb.AddForce(_localGravity, ForceMode2D.Force);
     }
 
-    private void Jump()
+    protected virtual void Jump()
     {
         
-        if (!_grounded) return;
-        _grounded = false;
+        if (!Grounded) return;
+        Grounded = false;
 
         onJumpInitiated?.Invoke(0);
-        
+
         //reset y-velocity for consistency
-        _rb.velocity = new Vector2(_rb.velocity.x, 0f);
-                
+        Rb.velocity = new Vector2(Rb.velocity.x, 0f);
+
         //formula to reach height <jumpHeight>
         //under gravity <maxGravityAcceleration> 
         // v0=sqrt(2gY)
-        _jumpVelocity = Mathf.Sqrt(2f * _localGravityY * jumpHeight);
-        _rb.velocity = new Vector2(_rb.velocity.x, _jumpVelocity);
+        JumpVelocity = Mathf.Sqrt(2f * LocalGravityY * jumpHeight);
+        Rb.velocity = new Vector2(Rb.velocity.x, JumpVelocity);
     }
 
     public void PlayerHitGround(int id)
     {
-        _grounded = true;
+        Grounded = true;
         onLanded?.Invoke(0);
-        Jump();
     }
     
     [Obsolete("Not used any more, using a velocity based implementation", true)]
     private void JumpPhysics()
     {
         
-        if (!_grounded) return;
-        _grounded = false;
+        if (!Grounded) return;
+        Grounded = false;
         
         //reset y-velocity for consistency
-        _rb.velocity = new Vector2(_rb.velocity.x, 0f);
+        Rb.velocity = new Vector2(Rb.velocity.x, 0f);
 
         var jumpVec = Vector2.up * 10f;
-        _rb.AddForce(jumpVec, ForceMode2D.Impulse);
+        Rb.AddForce(jumpVec, ForceMode2D.Impulse);
     }
 }
