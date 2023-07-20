@@ -21,13 +21,6 @@ public class FroggyController : CustomCharacterController
         //reset y-velocity for consistency
         Rb.velocity = new Vector2(Rb.velocity.x, 0f);
 
-        //Random Flipping, definitely needs to be changed and placed somewhere else
-        if (Random.value > 0.5f)
-        {
-            _direction *= -1;
-            onFlip?.Invoke();
-        }
-        
         _jumpXVelocity = forwardJumpForce * _direction;
 
         //formula to reach height <jumpHeight>
@@ -35,6 +28,16 @@ public class FroggyController : CustomCharacterController
         // v0=sqrt(2gY)
         JumpVelocity = Mathf.Sqrt(2f * LocalGravityY * jumpHeight);
         Rb.velocity = new Vector2(_jumpXVelocity, JumpVelocity);
+    }
+
+    public void RandomizeJumpDirection()
+    {
+        //Random Flipping, definitely needs to be changed and placed somewhere else
+        if (Random.value > 0.5f)
+        {
+            _direction *= -1;
+            onFlip?.Invoke();
+        }
     }
 
     public void ReceiveJumpCommand()
