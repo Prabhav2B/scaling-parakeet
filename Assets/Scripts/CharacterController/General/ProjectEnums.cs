@@ -14,6 +14,7 @@ public abstract class ProjectEnums
     public enum FroggyState
     {
         Idle,
-        Jump
+        Jump,
+        ReachTarget
     }
 }

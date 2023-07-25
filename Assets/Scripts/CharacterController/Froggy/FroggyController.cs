@@ -10,8 +10,39 @@ public class FroggyController : CustomCharacterController
 
     private float _jumpXVelocity;
     private float _direction = 1f;
+
+    //private int _facingLeft;
     
-    protected override void Jump()
+    protected override void Jump(Vector2 targetNormalVector = default)
+    {
+        if (!Grounded) return;
+        Grounded = false;
+
+        onJumpInitiated?.Invoke(0);
+        
+        if(_direction * targetNormalVector.x < 0)
+        {
+            _direction *= -1;
+            onFlip?.Invoke();
+        }
+
+        //reset y-velocity for consistency
+        Rb.velocity = new Vector2(Rb.velocity.x, 0f);
+
+        //NOTE: new x velocity is being appended to existing x velocity
+        _jumpXVelocity = Rb.velocity.x + forwardJumpForce * targetNormalVector.x;
+
+        // if(targetNormalVector.y > 0f)
+        //     targetNormalVector.Scale(new Vector2(1f, 0f));
+        
+        //formula to reach height <jumpHeight>
+        //under gravity <maxGravityAcceleration> 
+        // v0=sqrt(2gY)
+        JumpVelocity = Mathf.Sqrt(2f * LocalGravityY * jumpHeight * targetNormalVector.y);
+        Rb.velocity = new Vector2(_jumpXVelocity, JumpVelocity);
+    }
+    
+    protected void RandomJump()
     {
         if (!Grounded) return;
         Grounded = false;
@@ -21,7 +52,8 @@ public class FroggyController : CustomCharacterController
         //reset y-velocity for consistency
         Rb.velocity = new Vector2(Rb.velocity.x, 0f);
 
-        _jumpXVelocity = forwardJumpForce * _direction;
+        //NOTE: new x velocity is being appended to existing x velocity
+        _jumpXVelocity = Rb.velocity.x + forwardJumpForce * _direction;
 
         //formula to reach height <jumpHeight>
         //under gravity <maxGravityAcceleration> 
@@ -40,8 +72,11 @@ public class FroggyController : CustomCharacterController
         }
     }
 
-    public void ReceiveJumpCommand()
+    public void ReceiveJumpCommand(Vector2 direction = default)
     {
-        Jump();
+        if(direction == default)
+            RandomJump();
+        else
+            Jump(direction);
     }
 }

@@ -114,7 +114,7 @@ public class CustomCharacterController : MonoBehaviour
         Rb.AddForce(_localGravity, ForceMode2D.Force);
     }
 
-    protected virtual void Jump()
+    protected virtual void Jump(Vector2 targetNormalVector = default)
     {
         
         if (!Grounded) return;

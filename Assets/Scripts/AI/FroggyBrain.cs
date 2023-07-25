@@ -58,18 +58,47 @@ public class FroggyBrain : MonoBehaviour
                         break;
                     }
                 }
-                onStateChange.Invoke(ProjectEnums.FroggyState.Idle);
+                EvaluateState();
+                break;
+            case ProjectEnums.FroggyState.ReachTarget:
+                TryReachTarget();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
     }
 
+    private void TryReachTarget()
+    {
+        var targetPosition = FindObjectOfType<TargetBehavior>().transform.position;
+        var vectorToTarget = (targetPosition - transform.position);
+        var normalVectorToTarget = vectorToTarget.normalized;
+        
+        _froggyController.ReceiveJumpCommand(normalVectorToTarget);
+    }
 
     private void Update()
     {
         if(_jumpCompleted)
             _timeElapsed += Time.deltaTime;
+    }
+
+    private void EvaluateState()
+    {
+        if (FindObjectOfType<TargetBehavior>() != null)
+        {
+            onStateChange?.Invoke(ProjectEnums.FroggyState.ReachTarget);
+            return;
+        }
+
+        if (_jumpCompleted)
+        {
+            onStateChange?.Invoke(Random.value > 0.5f ? ProjectEnums.FroggyState.Jump : ProjectEnums.FroggyState.Idle);
+            return;
+        }
+
+        onStateChange?.Invoke(ProjectEnums.FroggyState.Idle);
+
     }
 
     private bool TryJump()
@@ -86,7 +115,7 @@ public class FroggyBrain : MonoBehaviour
     {
         _jumpCompleted = true;
         _timeElapsed = 0f;
-        onStateChange?.Invoke(ProjectEnums.FroggyState.Idle);
+        EvaluateState();
     }
 
     private IEnumerator Idleing()
@@ -96,7 +125,7 @@ public class FroggyBrain : MonoBehaviour
         yield return new WaitForSeconds(Random.Range(0f, 2f));
         
         Debug.Log("Ended Idleing");
-        onStateChange?.Invoke(Random.value > 0.5f ? ProjectEnums.FroggyState.Jump : ProjectEnums.FroggyState.Idle);
+        EvaluateState();
     }
 }
 
